@@ -34,5 +34,7 @@ Single header, whole implementation.
 1. https://github.com/vurtun/nuklear
 1. https://github.com/sheredom/utf8.h
 1. https://github.com/sheredom/json.h
+1. https://github.com/richgel999/miniz
+1. https://github.com/dr-soft/miniaudio
 
 
