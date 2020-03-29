@@ -32,4 +32,7 @@ Single header, whole implementation.
 1. https://github.com/nothings/stb
 1. https://github.com/randrew/layout
 1. https://github.com/vurtun/nuklear
+1. https://github.com/sheredom/utf8.h
+1. https://github.com/sheredom/json.h
+
 
