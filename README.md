@@ -25,3 +25,10 @@ int main() {
     return (int)spc_loop_basic();
 }
 ```
+
+## Who's like-minded?
+Single header, whole implementation.
+
+1. https://github.com/nothings/stb
+1. https://github.com/randrew/layout
+
