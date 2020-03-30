@@ -32,7 +32,9 @@ scoped_pointer(WNDCLASSEX*)spcDefaultClass();
 ATOM spcf_class_register(WNDCLASSEX *);
 scoped_pointer(spcs_create_window_ex_t *)spcDefaultWindow();
 #define spcg_class(w)\
-    using(WNDCLASSEX *, w, spcDefaultClass(), spcf_class_register)
+    using(WNDCLASSEX *, w,\
+          spcDefaultClass((WNDCLASSEX []){0}),\
+          spcf_class_register)
 
 
 
@@ -41,7 +43,9 @@ spcf_window_create(spcs_create_window_ex_t *);
 WPARAM spc_loop_basic(void);
 LRESULT CALLBACK SPCMainWindowProcRoutine(WNDPROC, HWND, UINT, WPARAM, LPARAM);
 #define spcg_window(w) \
-    using(spcs_create_window_ex_t *, w, spcDefaultWindow(), spcf_window_create)
+    using(spcs_create_window_ex_t *, w,\
+            spcDefaultWindow((spcs_create_window_ex_t[]){0}), \
+            spcf_window_create)
 
 #define spcfn_window(name, h, m, w, l) \
     LRESULT CALLBACK name (HWND h, UINT m, WPARAM w, LPARAM l) {\
@@ -51,8 +55,7 @@ LRESULT CALLBACK SPCMainWindowProcRoutine(WNDPROC, HWND, UINT, WPARAM, LPARAM);
     LRESULT CALLBACK name##_handler (HWND h, UINT m, WPARAM w, LPARAM l)
 
 #  ifndef S1P7C_NO_IMPLEMENTATION
-scoped_pointer(WNDCLASSEX*)spcDefaultClass() {
-    WNDCLASSEX *w = (WNDCLASSEX *)     calloc(1, sizeof(*w));
+scoped_pointer(WNDCLASSEX*)spcDefaultClass(scoped_pointer(WNDCLASSEX*) w) {
     w->cbSize = sizeof(*w);
     w->style = CS_DBLCLKS | CS_HREDRAW | CS_VREDRAW;
     w->lpfnWndProc = DefWindowProc;
@@ -66,12 +69,11 @@ scoped_pointer(WNDCLASSEX*)spcDefaultClass() {
 
 ATOM spcf_class_register(WNDCLASSEX *w) {
     ATOM    ret = RegisterClassEx(w);
-    free(w);
     return ret;
 }
 
-scoped_pointer(spcs_create_window_ex_t*)spcDefaultWindow() {
-    spcs_create_window_ex_t *w = (spcs_create_window_ex_t*) malloc(sizeof(*w));
+scoped_pointer(spcs_create_window_ex_t*)spcDefaultWindow(
+        scoped_pointer(spcs_create_window_ex_t*) w) {
     w->dwExStyle = 0;
     w->lpClassName = SPCDefaultClass;
     w->lpWindowName = TEXT("");
@@ -102,7 +104,6 @@ HWND spcf_window_create(spcs_create_window_ex_t *w) {
             w->hMenu,
             w->hInstance,
             w->lpParam);
-    free(w);
     return h;
 }
 
