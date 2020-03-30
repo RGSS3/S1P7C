@@ -1,4 +1,6 @@
 # S1P7C
+A C99/C11 single file header for create normal windows/winform api calls
+especially with many defaults
 
 ```c
 #include "../s1p7c.h"
