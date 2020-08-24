@@ -1,5 +1,5 @@
 # S1P7C
-A C99/C11 single file header for create normal windows/winform api calls
+A C99/C11 single file header for creating normal windows/winform api calls
 especially with many defaults
 
 ```c
