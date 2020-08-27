@@ -127,6 +127,7 @@ HWND spcf_window_create(spcs_create_window_ex_t *w) {
             w->hMenu,
             w->hInstance,
             w->lpParam);
+    WINASSERT(hwnd);
     if(w->spcFlags & SPC_USE_OPENGL) {
         PIXELFORMATDESCRIPTOR pfd={
         	sizeof(pfd),
