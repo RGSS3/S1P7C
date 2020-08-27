@@ -127,21 +127,21 @@ HWND spcf_window_create(spcs_create_window_ex_t *w) {
             w->hMenu,
             w->hInstance,
             w->lpParam);
-    if(w->spcFlags & SPC_USE_OPENGL){
+    if(w->spcFlags & SPC_USE_OPENGL) {
         PIXELFORMATDESCRIPTOR pfd={
-		sizeof(pfd),
-		1,
-		PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER ,
-		PFD_TYPE_RGBA,
-		32,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 8, 0, PFD_MAIN_PLANE, 0, 0, 0, 0
-	};
+        	sizeof(pfd),
+        	1,
+        	PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER ,
+        	PFD_TYPE_RGBA,
+        	32,
+        	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 8, 0, PFD_MAIN_PLANE, 0, 0, 0, 0
+        };
         HDC hdc=GetDC(hwnd);
-	assert(hdc);
-	WINASSERT(hdc!=NULL);
+        assert(hdc);
+		WINASSERT(hdc!=NULL);
         SetPixelFormat(hdc, ChoosePixelFormat(hdc, &pfd), &pfd);
         HGLRC hrc=wglCreateContext(hdc);
-	WINASSERT(hrc!=NULL);
+        WINASSERT(hrc!=NULL);
         WINASSERT(wglMakeCurrent(hdc, hrc));
     }
     SPC_HWND=hwnd;
