@@ -2,6 +2,9 @@
 #define S1P7C_H_
 
 #include <windows.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <assert.h>
 #define using(TYPE, OBJECT, CREATE, ...) \
     for (int S1P7C_init = 1; S1P7C_init; )\
     for (TYPE OBJECT = (CREATE); S1P7C_init; \
@@ -10,6 +13,22 @@
 
 #define SPCDefaultClass TEXT("SPC Window")
 #define SPCDefStruct(a) typedef struct a a; struct a
+
+#define WIDEN2(x) L ## x
+#define WIDEN(x) WIDEN2(x)
+#define WINASSERT(x) do{DWORD err;\
+	if(!(x) || ((err=GetLastError())!=0)){\
+		LPTSTR str=0;\
+		if(FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM,0,err,0,(LPTSTR)&str,1,NULL)){\
+			fwprintf(stderr, L"S1P7C_ASSERT FAILED: " WIDEN(#x) " @ " WIDEN(__FILE__) " GetLastError()=%d (%s)\n",err, str);\
+		}else{fwprintf(stderr, L"S1P7C_ASSERT FAILED: " WIDEN(#x) " @ " WIDEN(__FILE__) " GetLastError()=%d (SPC Unknown Error)\n",err);}abort();\
+	}\
+}while(0);
+#define SPC_DEFAULT 0
+#define SPC_USE_OPENGL 1
+#define SPC_OPENGL_ENABLE_VSYNC 2
+
+static HWND SPC_HWND=0;
 
 SPCDefStruct(
     spcs_create_window_ex_t) {
@@ -25,6 +44,7 @@ SPCDefStruct(
     HMENU    hMenu;
     HINSTANCE    hInstance;
     LPVOID    lpParam;
+    int spcFlags;
 };
 
 #define scoped_pointer(a) a
@@ -42,9 +62,9 @@ HWND
 spcf_window_create(spcs_create_window_ex_t *);
 WPARAM spc_loop_basic(void);
 LRESULT CALLBACK SPCMainWindowProcRoutine(WNDPROC, HWND, UINT, WPARAM, LPARAM);
-#define spcg_window(w) \
+#define spcg_window(w, flags) \
     using(spcs_create_window_ex_t *, w,\
-            spcDefaultWindow((spcs_create_window_ex_t[]){0}), \
+            spcDefaultWindow((spcs_create_window_ex_t[]){0}, flags), \
             spcf_window_create)
 
 #define spcfn_window(name, h, m, w, l) \
@@ -57,7 +77,7 @@ LRESULT CALLBACK SPCMainWindowProcRoutine(WNDPROC, HWND, UINT, WPARAM, LPARAM);
 #  ifndef S1P7C_NO_IMPLEMENTATION
 scoped_pointer(WNDCLASSEX*)spcDefaultClass(scoped_pointer(WNDCLASSEX*) w) {
     w->cbSize = sizeof(*w);
-    w->style = CS_DBLCLKS | CS_HREDRAW | CS_VREDRAW;
+    w->style = CS_DBLCLKS | CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
     w->lpfnWndProc = DefWindowProc;
     w->lpszClassName = SPCDefaultClass;
     w->hCursor = LoadCursor(NULL, IDC_ARROW);
@@ -73,7 +93,7 @@ ATOM spcf_class_register(WNDCLASSEX *w) {
 }
 
 scoped_pointer(spcs_create_window_ex_t*)spcDefaultWindow(
-        scoped_pointer(spcs_create_window_ex_t*) w) {
+        scoped_pointer(spcs_create_window_ex_t*) w, int flags) {
     w->dwExStyle = 0;
     w->lpClassName = SPCDefaultClass;
     w->lpWindowName = TEXT("");
@@ -86,11 +106,12 @@ scoped_pointer(spcs_create_window_ex_t*)spcDefaultWindow(
     w->hMenu = (HMENU)0;
     w->hInstance = 0;
     w->lpParam = 0;
+    w->spcFlags=flags;
     return w;
 }
 
 HWND spcf_window_create(spcs_create_window_ex_t *w) {
-    HWND    h =
+    HWND    hwnd =
         CreateWindowEx(
             w->dwExStyle,
             w->lpClassName,
@@ -104,7 +125,25 @@ HWND spcf_window_create(spcs_create_window_ex_t *w) {
             w->hMenu,
             w->hInstance,
             w->lpParam);
-    return h;
+    if(w->spcFlags | SPC_USE_OPENGL){
+        PIXELFORMATDESCRIPTOR pfd={
+		sizeof(pfd),
+		1,
+		PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER ,
+		PFD_TYPE_RGBA,
+		32,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 8, 0, PFD_MAIN_PLANE, 0, 0, 0, 0
+	};
+        HDC hdc=GetDC(hwnd);
+	assert(hdc);
+	WINASSERT(hdc!=NULL);
+        SetPixelFormat(hdc, ChoosePixelFormat(hdc, &pfd), &pfd);
+        HGLRC hrc=wglCreateContext(hdc);
+	WINASSERT(hrc!=NULL);
+        WINASSERT(wglMakeCurrent(hdc, hrc));
+    }
+    SPC_HWND=hwnd;
+    return hwnd;
 }
 
 WPARAM
