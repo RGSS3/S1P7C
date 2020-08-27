@@ -16,7 +16,7 @@ int main() {
     spcg_class(w) {
         w->lpfnWndProc = wndproc;
     }
-    spcg_window(w) {
+    spcg_window(w, SPC_DEFAULT) {
         w->lpWindowName = "Hello world";
     }
     return (int)spc_loop_basic();
