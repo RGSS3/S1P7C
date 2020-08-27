@@ -2,6 +2,7 @@
 #define S1P7C_H_
 
 #include <windows.h>
+#include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -47,6 +48,14 @@ SPCDefStruct(
     int spcFlags;
 };
 
+
+SPCDefStruct(spcs_timespan_t) {
+	long clk;
+	int used;
+	float span;
+};
+	
+
 #define scoped_pointer(a) a
 scoped_pointer(WNDCLASSEX*)spcDefaultClass();
 ATOM spcf_class_register(WNDCLASSEX *);
@@ -63,6 +72,7 @@ spcf_window_create(spcs_create_window_ex_t *);
 WPARAM spc_loop_basic(void);
 int spc_yield(void);
 void spcgl_swap_buffers();
+int spc_timespan_mark(spcs_timespan_t *, float dt);
 LRESULT CALLBACK SPCMainWindowProcRoutine(WNDPROC, HWND, UINT, WPARAM, LPARAM);
 #define spcg_window(w, flags) \
     using(spcs_create_window_ex_t *, w,\
@@ -90,7 +100,7 @@ scoped_pointer(WNDCLASSEX*)spcDefaultClass(scoped_pointer(WNDCLASSEX*) w) {
 }
 
 ATOM spcf_class_register(WNDCLASSEX *w) {
-    ATOM    ret = RegisterClassEx(w);
+    ATOM   ret = RegisterClassEx(w);
     return ret;
 }
 
@@ -104,7 +114,7 @@ scoped_pointer(spcs_create_window_ex_t*)spcDefaultWindow(
     w->y = CW_USEDEFAULT;
     w->nWidth = 640;
     w->nHeight = 480;
-    w->hWndParent = (HWND)     0;
+    w->hWndParent = (HWND)0;
     w->hMenu = (HMENU)0;
     w->hInstance = 0;
     w->lpParam = 0;
@@ -129,7 +139,7 @@ HWND spcf_window_create(spcs_create_window_ex_t *w) {
             w->lpParam);
     WINASSERT(hwnd);
     if(w->spcFlags & SPC_USE_OPENGL) {
-        PIXELFORMATDESCRIPTOR pfd={
+        PIXELFORMATDESCRIPTOR pfd= {
         	sizeof(pfd),
         	1,
         	PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER ,
@@ -144,6 +154,7 @@ HWND spcf_window_create(spcs_create_window_ex_t *w) {
         HGLRC hrc=wglCreateContext(hdc);
         WINASSERT(hrc!=NULL);
         WINASSERT(wglMakeCurrent(hdc, hrc));
+        ReleaseDC(hwnd, hdc);
     }
     SPC_HWND=hwnd;
     return hwnd;
@@ -159,9 +170,12 @@ spc_loop_basic(void) {
     return msg.wParam;
 }
 
+#define spcs_timespan_INIT() {0, 0, 0.0f}
 
-
-#define spcgl_loop_basic() for (;spc_yield(); spcgl_swap_buffers())
+#define spcgl_loop_basic() for (; spc_yield(); spcgl_swap_buffers(NULL))
+#define spcgl_loop_dt(dt) \
+    for (spcs_timespan_t dt = spcs_timespan_INIT();\
+    	             spc_yield(); spcgl_swap_buffers(&dt))
 
 LRESULT CALLBACK SPCMainWindowProcRoutine(
     WNDPROC wndproc,
@@ -183,23 +197,46 @@ LRESULT CALLBACK SPCMainWindowProcRoutine(
     return DefWindowProc(h, m, w, l);
 }
 
-int spc_yield(void) {
+int spc_yield() {
 	MSG msg;
-	while(PeekMessage(&msg, 0, 0, 0, PM_REMOVE)){
-		if(msg.message==WM_QUIT) {
+	while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
+		if (msg.message == WM_QUIT) {
 			return 0;
 		}
 		TranslateMessage(&msg); 
 		DispatchMessage(&msg);
-	}	
+	}
 	return 1;
 }
 
 
-void spcgl_swap_buffers(void) {
-	HDC hdc = GetDC(SPC_HWND);
-	SwapBuffers(hdc);
-	ReleaseDC(SPC_HWND, hdc);
+void spcgl_swap_buffers(spcs_timespan_t *dt) {
+	if (!dt || dt->used) {
+		HDC hdc = GetDC(SPC_HWND);
+		SwapBuffers(hdc);
+		ReleaseDC(SPC_HWND, hdc);
+		if (dt) {
+			dt->used = 1;
+		}
+	}
+}
+
+int spc_timespan_mark(spcs_timespan_t *dt, float interval) {
+	if (dt->clk == 0) {
+		dt->clk   = clock();
+		dt->span  = 0;
+		dt->used = 1;
+		return 1;
+	} else {
+		float delta = (float)((double)(clock() - dt->clk) / CLOCKS_PER_SEC);
+		if (delta >= interval) {
+			dt->span = delta;
+			dt->clk  = clock();
+			dt->used = 1;
+			return 1;
+		}
+		return 0;
+	}
 }
 
 
