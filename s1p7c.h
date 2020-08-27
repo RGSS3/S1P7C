@@ -61,6 +61,8 @@ scoped_pointer(spcs_create_window_ex_t *)spcDefaultWindow();
 HWND
 spcf_window_create(spcs_create_window_ex_t *);
 WPARAM spc_loop_basic(void);
+int spc_yield(void);
+void spcgl_swap_buffers();
 LRESULT CALLBACK SPCMainWindowProcRoutine(WNDPROC, HWND, UINT, WPARAM, LPARAM);
 #define spcg_window(w, flags) \
     using(spcs_create_window_ex_t *, w,\
@@ -125,7 +127,7 @@ HWND spcf_window_create(spcs_create_window_ex_t *w) {
             w->hMenu,
             w->hInstance,
             w->lpParam);
-    if(w->spcFlags | SPC_USE_OPENGL){
+    if(w->spcFlags & SPC_USE_OPENGL){
         PIXELFORMATDESCRIPTOR pfd={
 		sizeof(pfd),
 		1,
@@ -156,6 +158,10 @@ spc_loop_basic(void) {
     return msg.wParam;
 }
 
+
+
+#define spcgl_loop_basic() for (;spc_yield(); spcgl_swap_buffers())
+
 LRESULT CALLBACK SPCMainWindowProcRoutine(
     WNDPROC wndproc,
     HWND h,
@@ -175,6 +181,26 @@ LRESULT CALLBACK SPCMainWindowProcRoutine(
     }
     return DefWindowProc(h, m, w, l);
 }
+
+int spc_yield(void) {
+	MSG msg;
+	while(PeekMessage(&msg, 0, 0, 0, PM_REMOVE)){
+		if(msg.message==WM_QUIT) {
+			return 0;
+		}
+		TranslateMessage(&msg); 
+		DispatchMessage(&msg);
+	}	
+	return 1;
+}
+
+
+void spcgl_swap_buffers(void) {
+	HDC hdc = GetDC(SPC_HWND);
+	SwapBuffers(hdc);
+	ReleaseDC(SPC_HWND, hdc);
+}
+
 
 #  endif
 

@@ -21,17 +21,10 @@ int main() {
     spcg_window(w, SPC_USE_OPENGL) {
         w->lpWindowName = "Hello OpenGL";
     }
-    //LOAD_GL(WGLSWAPINTERVALEXT, wglSwapIntervalEXT); wglSwapIntervalEXT(1);
-    while(1){
-		MSG msg;
-		while(PeekMessage(&msg, 0, 0, 0, PM_REMOVE)){
-			if(msg.message==WM_QUIT) return 0;
-			TranslateMessage(&msg); DispatchMessage(&msg);
-		}
+    
+    spcgl_loop_basic() {
 		glClearColor(0.4f, 0.8f, 1.f, 1.f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		HDC hdc=GetDC(SPC_HWND);
-		SwapBuffers(hdc);
     }
     return 0;
 }
