@@ -216,7 +216,7 @@ void spcgl_swap_buffers(spcs_timespan_t *dt) {
 		SwapBuffers(hdc);
 		ReleaseDC(SPC_HWND, hdc);
 		if (dt) {
-			dt->used = 1;
+			dt->used = 0;
 		}
 	}
 }
