@@ -57,14 +57,13 @@ SPCDefStruct(spcs_timespan_t) {
 	
 
 #define scoped_pointer(a) a
-scoped_pointer(WNDCLASSEX*)spcDefaultClass();
+scoped_pointer(WNDCLASSEX*)spcDefaultClass(scoped_pointer(WNDCLASSEX*));
 ATOM spcf_class_register(WNDCLASSEX *);
-scoped_pointer(spcs_create_window_ex_t *)spcDefaultWindow();
+scoped_pointer(spcs_create_window_ex_t *)spcDefaultWindow(scoped_pointer(spcs_create_window_ex_t*), int flags, ...);
 #define spcg_class(w)\
     using(WNDCLASSEX *, w,\
           spcDefaultClass((WNDCLASSEX []){0}),\
           spcf_class_register)
-
 
 
 HWND
@@ -74,11 +73,15 @@ int spc_yield(void);
 void spcgl_swap_buffers();
 int spc_timespan_mark(spcs_timespan_t *, float dt);
 LRESULT CALLBACK SPCMainWindowProcRoutine(WNDPROC, HWND, UINT, WPARAM, LPARAM);
-#define spcg_window(w, flags) \
-    using(spcs_create_window_ex_t *, w,\
-            spcDefaultWindow((spcs_create_window_ex_t[]){0}, flags), \
+
+#define SPCFST(a, ...) a
+#define SPCRST(a, ...) __VA_ARGS__
+#define spcg_window(...) \
+    using(spcs_create_window_ex_t *, SPCFST(__VA_ARGS__,),\
+            spcDefaultWindow((spcs_create_window_ex_t[]){0}, SPCRST(__VA_ARGS__,) 0), \
             spcf_window_create)
 
+    
 #define spcfn_window(name, h, m, w, l) \
     LRESULT CALLBACK name (HWND h, UINT m, WPARAM w, LPARAM l) {\
  LRESULT CALLBACK name##_handler (HWND h, UINT m, WPARAM w, LPARAM l);\
@@ -105,7 +108,7 @@ ATOM spcf_class_register(WNDCLASSEX *w) {
 }
 
 scoped_pointer(spcs_create_window_ex_t*)spcDefaultWindow(
-        scoped_pointer(spcs_create_window_ex_t*) w, int flags) {
+        scoped_pointer(spcs_create_window_ex_t*) w, int flags, ...) {
     w->dwExStyle = 0;
     w->lpClassName = SPCDefaultClass;
     w->lpWindowName = TEXT("");
